@@ -5,7 +5,7 @@ import numpy as np
 class solver_decoder:
     def __init__(self,instance):
         self.instance = instance
-    def decode(self,chromosome,rewrite):
+    def decode(self,chromosome,rewrite): 
         
         I = self.instance.parameters[0]
         J = self.instance.parameters[1]

@@ -9,8 +9,8 @@ from sklearn.ensemble import GradientBoostingRegressor
 class Fitness_aproximation:
     def __init__(self,instance):
         self.instance = instance
-        self.train_data = 0
-        self.test_data = 0
+        self.train_data = [[],[]]
+        self.test_data = [[],[]]
         self.trained = False
 
     
@@ -75,8 +75,10 @@ class Fitness_aproximation:
             result = X_fabricas + X_depositos
             X.append(result)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
-        self.train_data = [X_train,Y_train]
-        self.test_data = [X_test,Y_test]
+        self.train_data[0] = self.train_data[0] + X_train
+        self.train_data[1] = self.train_data[1] + Y_train
+        self.test_data[0] = self.test_data[0] + X_test
+        self.test_data[1] = self.test_data[1] + Y_test
 
 
 

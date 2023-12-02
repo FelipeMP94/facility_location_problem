@@ -447,12 +447,11 @@ class BrkgaMpIpr:
 
    
 
-        #All values whith real fitness
-        self._real_fitness = [1 for i in np.arange(self.params.population_size)]
 
-        # Traim the aproximation fitness 
-        cur_pop = self.get_current_population(0)
-        self.aproximation_decoder.prepare_data(cur_pop.fitness,cur_pop.chromosomes)
+        # Traim the aproximation fitness
+        for population in self._current_populations:
+            self.aproximation_decoder.prepare_data(population.fitness,population.chromosomes)
+         
         self.aproximation_decoder.train_model()
         print(f'Model MAE: {self.aproximation_decoder.MAE}')
     
@@ -776,24 +775,26 @@ class BrkgaMpIpr:
             next_pop.fitness[i] = (value[0], i)
 
             #Individual uses aproximation fitness
-            self._real_fitness[i] = 0
+        #print(f'População numero: {population_index}\n')
 
         o_elite = next_pop.fitness[:self.elite_size]
         next_pop.fitness.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
-        print(f'Elite Original:  {o_elite}\n')
+        #print(f'Elite Original:  {o_elite}\n')
 
         #Elite candidates
-        elite_candidates = next_pop.fitness[:self.elite_size]
+        n_candidates = 1
+        elite_candidates = next_pop.fitness[:n_candidates]
 
         for i,element in enumerate(elite_candidates):
             value = self._decoder.decode(chromosome=next_pop.chromosomes[element[1]],rewrite=True)
             elite_candidates[i] = (value,element[1])
 
         new_elite = o_elite + elite_candidates
-        print(f'Elite com candidatos:  {new_elite}\n')
+        #print(f'Elite com candidatos:  {new_elite}\n')
         new_elite.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
+        #print(f'Nova Elite sorteada {new_elite[:self.elite_size]}\n')
         next_pop.fitness[:self.elite_size] = new_elite[:self.elite_size]
-        print(f'Elite escolhida {next_pop.fitness[:self.elite_size]}\n')
+        #print(f'Elite escolhida {next_pop.fitness[:self.elite_size]}\n')
         
 
         
