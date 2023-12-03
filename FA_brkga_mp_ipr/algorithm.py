@@ -453,7 +453,7 @@ class BrkgaMpIpr:
             self.aproximation_decoder.prepare_data(population.fitness,population.chromosomes)
          
         self.aproximation_decoder.train_model()
-        print(f'Model MAE: {self.aproximation_decoder.MAE}')
+        
     
 
     ###########################################################################
@@ -778,16 +778,23 @@ class BrkgaMpIpr:
         #print(f'População numero: {population_index}\n')
 
         o_elite = next_pop.fitness[:self.elite_size]
-        next_pop.fitness.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
+        non_eleite = next_pop.fitness[self.elite_size:]
+        non_eleite.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
         #print(f'Elite Original:  {o_elite}\n')
 
         #Elite candidates
-        n_candidates = 1
-        elite_candidates = next_pop.fitness[:n_candidates]
+        n_candidates = 25
+        elite_candidates = non_eleite[:n_candidates]
+        
+        #print(f'Condidatos fitness Aproximado: {elite_candidates}\n')
 
         for i,element in enumerate(elite_candidates):
             value = self._decoder.decode(chromosome=next_pop.chromosomes[element[1]],rewrite=True)
             elite_candidates[i] = (value,element[1])
+        #print(f'Condidatos fitness exato {elite_candidates}\n')
+
+        #Realiza treino parcial
+        self.aproximation_decoder.partial_train(elite_candidates,next_pop.chromosomes)
 
         new_elite = o_elite + elite_candidates
         #print(f'Elite com candidatos:  {new_elite}\n')

@@ -9,8 +9,8 @@ from sklearn.ensemble import GradientBoostingRegressor
 class Fitness_aproximation:
     def __init__(self,instance):
         self.instance = instance
-        self.train_data = [[],[]]
-        self.test_data = [[],[]]
+        self.X_data = []
+        self.Y_data = []
         self.trained = False
 
     
@@ -68,17 +68,15 @@ class Fitness_aproximation:
             X_depositos = []
             for i in np.arange(len(cromossomo_deposito)):
                 if i not in depositos_escolhidos:
-                    X_depositos.append(0)
+                    X_depositos.append(0) 
                 else:
                     X_depositos.append(1)
 
             result = X_fabricas + X_depositos
             X.append(result)
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
-        self.train_data[0] = self.train_data[0] + X_train
-        self.train_data[1] = self.train_data[1] + Y_train
-        self.test_data[0] = self.test_data[0] + X_test
-        self.test_data[1] = self.test_data[1] + Y_test
+        self.X_data = self.X_data + X
+        self.Y_data = self.Y_data + Y
+        return X,Y
 
 
 
@@ -91,14 +89,14 @@ class ELM_decoder(Fitness_aproximation):
                      density=0.7,
                       pairwise_metric= 'euclidean',
                      alpha= 10e-4)
-        self.MAE = 0
 
     def train_model(self):
-        self.ELM.fit(self.train_data[0],self.train_data[1])
+        self.ELM.fit(self.X_data,self.Y_data)
         self.trained = True
-        pred = self.ELM.predict(self.test_data[0])
-        self.MAE = sklearn.metrics.mean_absolute_error(self.test_data[1],pred)
-        
+    
+    def partial_train(self,fit,initial_pop):
+        X,Y = self.prepare_data(fit,initial_pop)
+        self.ELM.partial_fit(X=X,y=Y)
         
     def decode(self,chromosome,rewrite = True):
         re_crom = np.reshape(chromosome,(1,-1))
