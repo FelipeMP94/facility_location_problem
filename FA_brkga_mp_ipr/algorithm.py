@@ -90,7 +90,7 @@ class BrkgaMpIpr:
     """
 
     def __init__(self, decoder: object, sense: Sense, seed: int,
-                 chromosome_size: int, params: BrkgaParams,aproximation_decoder: object,
+                 chromosome_size: int, params: BrkgaParams,aproximation_decoder=None,
                  evolutionary_mechanism_on: bool = True,
                  chrmosome_type: type = BaseChromosome,
 
@@ -169,10 +169,10 @@ class BrkgaMpIpr:
                             f"has no 'decode()' method")
         
 
-
-        elif not hasattr(aproximation_decoder, "decode"):
-                 raise TypeError(f"The given decoder ({type(aproximation_decoder)}) "
-                            f"has no 'decode()' method")
+        elif aproximation_decoder != None:
+            if not hasattr(aproximation_decoder, "decode"):
+                    raise TypeError(f"The given decoder ({type(aproximation_decoder)}) "
+                                f"has no 'decode()' method")
              
 
         ###################
@@ -195,14 +195,14 @@ class BrkgaMpIpr:
         # Algorithm data
         ###################
 
+    
+
         self._ChromosomeType = chrmosome_type
         """(type BaseChromosome) This is the class/type for the chromosomes."""
 
         self._current_populations = []
         """(List[Population]) Current populations."""
 
-        self._real_fitness = []
-        '''(List[Population])If Choromosome use real fitness '''
 
         self._previous_populations = []
         """(List[Population]) Previous populations."""
@@ -448,11 +448,11 @@ class BrkgaMpIpr:
    
 
 
-        # Traim the aproximation fitness
-        for population in self._current_populations:
-            self.aproximation_decoder.prepare_data(population.fitness,population.chromosomes)
-         
-        self.aproximation_decoder.train_model()
+        # Train the aproximation fitness
+        if self.aproximation_decoder != None:
+            for population in self._current_populations:
+                self.aproximation_decoder.prepare_data(population.fitness,population.chromosomes)
+            self.aproximation_decoder.train_model()
         
     
 
@@ -767,41 +767,47 @@ class BrkgaMpIpr:
         # In Python, due to restrictions to the Python interpreter, this may
         # not be possible, from a pure Python implementation perspective.
 
-        for i in range(self.elite_size, self.params.population_size):
-            #Changing to decoder aproximation
-            value = self.aproximation_decoder.decode(chromosome=next_pop.chromosomes[i],
+
+
+        if self.aproximation_decoder == None:
+            for i in range(self.elite_size, self.params.population_size):
+                value = self._decoder.decode(chromosome=next_pop.chromosomes[i],
                                          rewrite=True)
-       
-            next_pop.fitness[i] = (value[0], i)
+                next_pop.fitness[i] = (value, i)
 
-            #Individual uses aproximation fitness
-        #print(f'População numero: {population_index}\n')
-
-        o_elite = next_pop.fitness[:self.elite_size]
-        non_eleite = next_pop.fitness[self.elite_size:]
-        non_eleite.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
-        #print(f'Elite Original:  {o_elite}\n')
-
-        #Elite candidates
-        n_candidates = 25
-        elite_candidates = non_eleite[:n_candidates]
+            next_pop.fitness.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
         
-        #print(f'Condidatos fitness Aproximado: {elite_candidates}\n')
+        else: 
+            for i in range(self.elite_size, self.params.population_size):
+                #Changing to decoder aproximation
+                value = self.aproximation_decoder.decode(chromosome=next_pop.chromosomes[i],
+                                            rewrite=True)
+        
+                next_pop.fitness[i] = (value[0], i)
 
-        for i,element in enumerate(elite_candidates):
-            value = self._decoder.decode(chromosome=next_pop.chromosomes[element[1]],rewrite=True)
-            elite_candidates[i] = (value,element[1])
-        #print(f'Condidatos fitness exato {elite_candidates}\n')
+            o_elite = next_pop.fitness[:self.elite_size]
+            non_eleite = next_pop.fitness[self.elite_size:]
+            non_eleite.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
+        
 
-        #Realiza treino parcial
-        self.aproximation_decoder.partial_train(elite_candidates,next_pop.chromosomes)
+            #Elite candidates
+            n_candidates = 100
+            elite_candidates = non_eleite[:n_candidates]
+            
+        
 
-        new_elite = o_elite + elite_candidates
-        #print(f'Elite com candidatos:  {new_elite}\n')
-        new_elite.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
-        #print(f'Nova Elite sorteada {new_elite[:self.elite_size]}\n')
-        next_pop.fitness[:self.elite_size] = new_elite[:self.elite_size]
-        #print(f'Elite escolhida {next_pop.fitness[:self.elite_size]}\n')
+            for i,element in enumerate(elite_candidates):
+                value = self._decoder.decode(chromosome=next_pop.chromosomes[element[1]],rewrite=True)
+                elite_candidates[i] = (value,element[1])
+        
+
+            #Realiza treino parcial
+            self.aproximation_decoder.partial_train(elite_candidates,next_pop.chromosomes)
+
+            new_elite = o_elite + elite_candidates
+            new_elite.sort(reverse=(self.opt_sense == Sense.MAXIMIZE))
+            next_pop.fitness[:self.elite_size] = new_elite[:self.elite_size]
+        
         
 
         
